@@ -5,14 +5,31 @@ using UnityEngine;
 
 public class Player : MonoBehaviour
 {
+    // Configuration parameters
+    [Header("General")]
+    [SerializeField] int health = 200;
+
+    [Header("Movement")]
     [SerializeField] float moveSpeed = 10f;
     [SerializeField] float padding = 1f;
+
+    [Header("Shooting")]
+    [SerializeField] AudioClip shootSound;
+    [SerializeField] [Range(0, 1)] float shootSoundVolume = 0.12f;
+
+    [Header("Death")]
+    [SerializeField] GameObject deathVFX;
+    [SerializeField] float durationOfExplosion = 1f;
+    [SerializeField] AudioClip deathSound;
+    [SerializeField] [Range(0, 1)] float deathSoundVolume = 0.75f;
+
+    [Header("Projectile")]
     [SerializeField] GameObject laserPrefab;
     [SerializeField] float projectileSpeed = 10f;
-    [SerializeField] float projectileFiringPeriod = 1f;
+    [SerializeField] float projectileFiringPeriod = 0.2f;
 
+    // Variables
     Coroutine firingCoroutine;
-
     float xMin;
     float yMin;
     float xMax;
@@ -29,6 +46,34 @@ public class Player : MonoBehaviour
     {
         Move();
         Fire();
+    }
+
+    private void OnTriggerEnter2D(Collider2D collision)
+    {
+        DamageDealer damageDealer = collision.gameObject.GetComponent<DamageDealer>();
+        if (!damageDealer) {
+            return;
+        }
+        ProcessHit(damageDealer);
+    }
+
+    private void ProcessHit(DamageDealer damageDealer)
+    {
+        health -= damageDealer.GetDamage();
+        damageDealer.Hit();
+        if (health <= 0)
+        {
+            Die();
+        }
+    }
+
+    private void Die()
+    {
+        FindObjectOfType<Level>().LoadGameOver();
+        Destroy(gameObject);
+        GameObject explosion = Instantiate(deathVFX, transform.position, transform.rotation) as GameObject;
+        Destroy(explosion, durationOfExplosion);
+        AudioSource.PlayClipAtPoint(deathSound, Camera.main.transform.position, deathSoundVolume);
     }
 
     private void Fire()
@@ -49,6 +94,7 @@ public class Player : MonoBehaviour
         {
             GameObject laser = Instantiate(laserPrefab, transform.position, Quaternion.identity) as GameObject;
             laser.GetComponent<Rigidbody2D>().velocity = new Vector2(0, projectileSpeed);
+            AudioSource.PlayClipAtPoint(shootSound, Camera.main.transform.position, shootSoundVolume);
             yield return new WaitForSeconds(projectileFiringPeriod);
         }
     }
