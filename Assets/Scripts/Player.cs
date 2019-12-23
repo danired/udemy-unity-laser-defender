@@ -34,11 +34,21 @@ public class Player : MonoBehaviour
     float yMin;
     float xMax;
     float yMax;
+    bool isAndroid = false;
 
     // Start is called before the first frame update
     void Start()
     {
+        CheckOS();
         SetUpMoveBoundaries();
+    }
+
+    private void CheckOS()
+    {
+        if (Application.platform == RuntimePlatform.Android)
+        {
+            isAndroid = true;
+        }
     }
 
     // Update is called once per frame
@@ -83,13 +93,30 @@ public class Player : MonoBehaviour
 
     private void Fire()
     {
-        if (Input.GetButtonDown("Fire1"))
+        if (isAndroid)
         {
-            firingCoroutine = StartCoroutine(FireContinuously());
+            // Smartphones
+            Touch touch = Input.GetTouch(0);
+            if (touch.phase == TouchPhase.Began)
+            {
+                firingCoroutine = StartCoroutine(FireContinuously());
+            }
+            else if (touch.phase == TouchPhase.Ended)
+            {
+                StopCoroutine(firingCoroutine);
+            }
         }
-        if (Input.GetButtonUp("Fire1"))
+        else
         {
-            StopCoroutine(firingCoroutine);
+            // Windows
+            if (Input.GetButtonDown("Fire1"))
+            {
+                firingCoroutine = StartCoroutine(FireContinuously());
+            }
+            if (Input.GetButtonUp("Fire1"))
+            {
+                StopCoroutine(firingCoroutine);
+            }
         }
     }
 
@@ -108,8 +135,18 @@ public class Player : MonoBehaviour
     {
         // Time.deltaTime: Devuelve el tiempo que tarda en ejecutar cada frame
         // Lo usamos para que la nave se mueva a la misma velocidad en computadoras lentas y rápidas
-        var deltaX = Input.GetAxis("Horizontal") * Time.deltaTime * moveSpeed;
-        var deltaY = Input.GetAxis("Vertical") * Time.deltaTime * moveSpeed;
+        float deltaX = 0;
+        float deltaY = 0;
+        if (isAndroid)
+        {
+            deltaX = Input.acceleration.x * Time.deltaTime * moveSpeed;
+            deltaY = Input.acceleration.y * Time.deltaTime * moveSpeed;
+        }
+        else
+        {
+            deltaX = Input.GetAxis("Horizontal") * Time.deltaTime * moveSpeed;
+            deltaY = Input.GetAxis("Vertical") * Time.deltaTime * moveSpeed;
+        }
 
         var newXPos = Mathf.Clamp(transform.position.x + deltaX, xMin, xMax);
         var newYPos = Mathf.Clamp(transform.position.y + deltaY, yMin, yMax);
