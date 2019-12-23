@@ -11,7 +11,9 @@ public class Player : MonoBehaviour
 
     [Header("Movement")]
     [SerializeField] float moveSpeed = 10f;
+    [SerializeField] float androidMoveSpeed = 30f;
     [SerializeField] float padding = 1f;
+    [SerializeField] float androidPaddingBottom = 3.5f;
 
     [Header("Shooting")]
     [SerializeField] AudioClip shootSound;
@@ -27,6 +29,9 @@ public class Player : MonoBehaviour
     [SerializeField] GameObject laserPrefab;
     [SerializeField] float projectileSpeed = 10f;
     [SerializeField] float projectileFiringPeriod = 0.2f;
+
+    [Header("Android")]
+    [SerializeField] GameObject androidSafeZone;
 
     // Variables
     Coroutine firingCoroutine;
@@ -48,6 +53,10 @@ public class Player : MonoBehaviour
         if (Application.platform == RuntimePlatform.Android)
         {
             isAndroid = true;
+            androidSafeZone.SetActive(true);
+        } else
+        {
+            androidSafeZone.SetActive(false);
         }
     }
 
@@ -139,8 +148,8 @@ public class Player : MonoBehaviour
         float deltaY = 0;
         if (isAndroid)
         {
-            deltaX = Input.acceleration.x * Time.deltaTime * moveSpeed;
-            deltaY = Input.acceleration.y * Time.deltaTime * moveSpeed;
+            deltaX = Input.acceleration.x * Time.deltaTime * androidMoveSpeed;
+            deltaY = Input.acceleration.y * Time.deltaTime * androidMoveSpeed;
         }
         else
         {
@@ -163,7 +172,14 @@ public class Player : MonoBehaviour
         Vector3 topRight = gameCamera.ViewportToWorldPoint(new Vector3(1, 1, 0));
 
         xMin = bottomLeft.x + padding;
-        yMin = bottomLeft.y + padding;
+        if (isAndroid)
+        {
+            yMin = bottomLeft.y + androidPaddingBottom;
+        }
+        else
+        {
+            yMin = bottomLeft.y + padding;
+        }
         xMax = topRight.x - padding;
         yMax = topRight.y - padding;
     }
